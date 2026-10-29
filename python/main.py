@@ -63,23 +63,31 @@ print(f"Test samples     : {len(test_dataset)}\n")
 # 4. MODEL DEFINITION
 # ─────────────────────────────────────────────
 # A small fully-connected network — intentionally tiny to run well on the Pi
-class SmallNet(nn.Module):
+class CNN(nn.Module):
     def __init__(self):
-        super(SmallNet, self).__init__()
+        super(CNN, self).__init__()
         # Input: 28x28 = 784 pixels (flattened)
-        self.fc1 = nn.Linear(784, 128)   # Hidden layer 1
-        self.fc2 = nn.Linear(128, 64)    # Hidden layer 2
-        self.fc3 = nn.Linear(64, 10)     # Output: 10 classes (digits 0–9)
-        self.relu = nn.ReLU()
+        self.features = nn.Sequential(
+            nn.Conv2d(1, 16, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+        )
+
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(32 * 7 * 7, 128),
+            nn.ReLU(),
+            nn.Linear(128, 10),
+        )
+        
 
     def forward(self, x):
-        x = x.view(-1, 784)   # Flatten the 28x28 image into a 784-dim vector
-        x = self.relu(self.fc1(x))
-        x = self.relu(self.fc2(x))
-        x = self.fc3(x)        # No softmax here — CrossEntropyLoss handles it
-        return x
+        return self.classifier(self.features(x)) 
 
-model = SmallNet().to(device)
+model = CNN().to(device)
 print("Model architecture:")
 print(model)
 
